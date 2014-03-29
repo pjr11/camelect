@@ -1,5 +1,5 @@
 var _ = require('underscore');
-var baseSeats = { lab: 16, con: 1, ind: 1, ld: 10 };
+var baseSeats = { ld: 10, lab: 16, con: 1, grn: 0, ind: 1 };
 var totalSeats = 42;
 var partyNames = {
   ld: "Lib Dem",
@@ -62,7 +62,7 @@ var outcomeCount = outcomeText.length;
 // p1 and p2 are the two parties in contention. p is the probability
 // that p1 will win the seat; we assume there's a probability of
 // 1-p that p2 will win the seat.
-var settings = [
+var baseSettings = [
   { p1: 'lab', p2: 'grn', p: 0.98 },  // Abbey
   { p1: 'lab', p2: 'ld', p: 0.90 },   // Arbury
   { p1: 'ld', p2: 'ind', p: 0.75 },   // Castle
@@ -79,8 +79,29 @@ var settings = [
   { p1: 'lab', p2: 'ld', p: 0.45 }    // West Chesterton
 ];
 
+// Settings for an optimistic Liberal Democrat
+var libDemHopingAgainstHopeSettings = [
+  { p1: 'lab', p2: 'grn', p: 0.6 },  // Abbey
+  { p1: 'lab', p2: 'ld', p: 0.60 },   // Arbury
+  { p1: 'ld', p2: 'ind', p: 0.9 },   // Castle
+  { p1: 'lab', p2: 'con', p: 0.7 },  // Cherry Hinton
+  { p1: 'lab', p2: 'con', p: 0.7 },  // Coleridge
+  { p1: 'ld', p2: 'lab', p: 0.75 },    // East Chesterton
+  { p1: 'lab', p2: 'ld', p: 0.5 },   // King's Hedges
+  { p1: 'ld', p2: 'lab', p: 0.8 },    // Market
+  { p1: 'ld', p2: 'lab', p: 0.9 },    // Newnham
+  { p1: 'lab', p2: 'ld', p: 0.5 },   // Petersfield
+  { p1: 'ld', p2: 'lab', p: 0.8 },   // Romsey
+  { p1: 'ld', p2: 'lab', p: 0.9 },    // Queen Edith's
+  { p1: 'ld', p2: 'con', p: 0.8 },    // Trumpington
+  { p1: 'lab', p2: 'ld', p: 0.7 }    // West Chesterton
+];
+
+// Which set shall we use?
+var settings = libDemHopingAgainstHopeSettings;
+
 // Think of c as being a binary number that we're incrementing; each array entry is one digit,
-// false as zero, true as one.
+// false as zero, true as one. Returns a boolean saying whether we've finished.
 function nextCombination(c) {
   for (var i = 0; i < c.length; i++) {
     if (c[i]) {
@@ -151,7 +172,8 @@ function computeProbs() {
   // seatProbs holds an array for each party of giving the probability
   // that it will end up with n seats.
   var seatProbs = {};
-  _.each(parties, function(party) { seatProbs[party] = arrayOfN(totalSeats, 0); });
+  // +1 here is because party could theoretically get 0 to 42 seats
+  _.each(parties, function(party) { seatProbs[party] = arrayOfN(totalSeats+1, 0); });
 
   do {
     var p = combinationProbability(c);
@@ -168,13 +190,17 @@ function computeProbs() {
 
     done = nextCombination(c);
   } while (!done);
-  return { probs: probs, seatProbs seatProbs };
+  return { probs: probs, seatProbs: seatProbs };
+}
+
+function outputPartyColumnHeaders(row0header) {
+  console.log(row0header + ',' + _.map(parties, function(p) { return partyNames[p]; }).join(','));
 }
 
 // Output the assumed probabilities in a format that's easy to make
 // a bar chart from
 function outputColourTable() {
-  console.log('Ward,' + _.map(parties, function(p) { return partyNames[p]; }).join(','));
+  outputPartyColumnHeaders('Ward');
   for (var i = 0; i < wardCount; i++) {
     var row = arrayOfN(parties.length, 0);
     var s = settings[i];
@@ -184,8 +210,14 @@ function outputColourTable() {
   }
 }
 
-function outputSeatProbs() {
-  
+function outputSeatProbs(seatProbs) {
+  outputPartyColumnHeaders('Seats');
+
+  for (var i = 0; i <= totalSeats; i++) {
+    console.log(i + ',' + _.map(parties, function(party) {
+      return seatProbs[party][i];
+    }).join(','));
+  }
 }
 
 var result = computeProbs();
