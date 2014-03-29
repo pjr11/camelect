@@ -1,35 +1,208 @@
-var base = { lab: 16, con: 1, ind: 1, ld: 10 };
-var partyNames = { lab: 'Labour', con: "Conservative", ind: "Independent", grn: "Green", ld: "Lib Dem" };
-var wardNames = {
-  a: 'Abbey',
-  b: 'Arbury',
-  c: 'Castle',
-  d: 'Cherry Hinton',
-  e: 'Coleridge',
-  f: 'East Chesterton',
-  g: 'King\'s Hedges',
-  h: 'Market',
-  i: 'Newnham',
-  j: 'Petersfield',
-  k: 'Romsey',
-  l: 'Queen Edith\'s',
-  m: 'Trumpington',
-  n: 'West Chesterton'
+var _ = require('underscore');
+var baseSeats = { lab: 16, con: 1, ind: 1, ld: 10 };
+var totalSeats = 42;
+var partyNames = {
+  ld: "Lib Dem",
+  lab: 'Labour',
+  con: "Conservative",
+  grn: "Green",
+  ind: "Independent"
 };
 
-var settings = [
-  { ward: 'a', p1: 'lab', p2: 'grn', p: 0.98 },
-  { ward: 'b', p1: 'lab', p2: 'ld', p: 0.95 },
-  { ward: 'c', p1: 'ind', p2: 'ld', p: 0.25 },
-  { ward: 'd', p1: 'lab', p2: 'con', p: 0.98 },
-  { ward: 'e', p1: 'lab', p2: 'con', p: 0.98 },
-  { ward: 'f', p1: 'ld', p2: 'lab', p: 0.4 },
-  { ward: 'g', p1: 'lab', p2: 'ld', p: 0.98 },
-  { ward: 'h', p1: 'ld', p2: 'lab', p: 0.6 },
-  { ward: 'i', p1: 'ld', p2: 'lab', p: 0.8 },
-  { ward: 'j', p1: 'lab', p2: 'ld', p: 0.95 },
-  { ward: 'k', p1: 'ld', p2: 'lab', p: 0.65 },
-  { ward: 'l', p1: 'ld', p2: 'lab', p: 0.6 },
-  { ward: 'm', p1: 'ld', p2: 'con', p: 0.6 },
-  { ward: 'n', p1: 'lab', p2: 'ld', p: 0.45 }
+var parties = _.keys(partyNames);
+var partyIndex = {};    // Maps each party to its index in parties
+_.each(parties, function(p, i) { partyIndex[p] = i; });
+
+var wardNames = [
+  'Abbey',
+  'Arbury',
+  'Castle',
+  'Cherry Hinton',
+  'Coleridge',
+  'East Chesterton',
+  'King\'s Hedges',
+  'Market',
+  'Newnham',
+  'Petersfield',
+  'Romsey',
+  'Queen Edith\'s',
+  'Trumpington',
+  'West Chesterton'
 ];
+
+var wardCount = wardNames.length;
+
+// Possible types of outcome
+var outcomes = {
+  LabourMajority: 0,
+  Labour21: 1,
+  NOCLabLargest: 2,
+  NOCLabLDEqual: 3,
+  NOCLDLargest: 4,
+  LDMayorsCastingVote: 5,
+  LDOutrightMajority: 6
+};
+
+var outcomeCount = _.keys(outcomes).length;
+
+// Descriptive text for each outcome
+var outcomeText = [
+  'Labour majority',
+  'Labour 21 seats',
+  'NOC - Labour largest party',
+  'NOC - Lab and LDs level',
+  'NOC - LDs largest party',
+  'LD control on mayor\'s casting vote',
+  'LD outright majority'
+];
+
+var outcomeCount = outcomeText.length;
+
+// This array specifies the input probabilities. For each seat,
+// p1 and p2 are the two parties in contention. p is the probability
+// that p1 will win the seat; we assume there's a probability of
+// 1-p that p2 will win the seat.
+var settings = [
+  { p1: 'lab', p2: 'grn', p: 0.98 },  // Abbey
+  { p1: 'lab', p2: 'ld', p: 0.90 },   // Arbury
+  { p1: 'ld', p2: 'ind', p: 0.75 },   // Castle
+  { p1: 'lab', p2: 'con', p: 0.98 },  // Cherry Hinton
+  { p1: 'lab', p2: 'con', p: 0.98 },  // Coleridge
+  { p1: 'ld', p2: 'lab', p: 0.5 },    // East Chesterton
+  { p1: 'lab', p2: 'ld', p: 0.95 },   // King's Hedges
+  { p1: 'ld', p2: 'lab', p: 0.6 },    // Market
+  { p1: 'ld', p2: 'lab', p: 0.8 },    // Newnham
+  { p1: 'lab', p2: 'ld', p: 0.90 },   // Petersfield
+  { p1: 'ld', p2: 'lab', p: 0.65 },   // Romsey
+  { p1: 'ld', p2: 'lab', p: 0.6 },    // Queen Edith's
+  { p1: 'ld', p2: 'con', p: 0.6 },    // Trumpington
+  { p1: 'lab', p2: 'ld', p: 0.45 }    // West Chesterton
+];
+
+// Think of c as being a binary number that we're incrementing; each array entry is one digit,
+// false as zero, true as one.
+function nextCombination(c) {
+  for (var i = 0; i < c.length; i++) {
+    if (c[i]) {
+      c[i] = false;
+    } else {
+      c[i] = true;
+      return false;   // not done
+    }
+  }
+
+  return true;  // done
+}
+
+// Compute the probability that this combination will happen
+function combinationProbability(c) {
+  var p = 1;
+
+  for (var i = 0; i < c.length; i++) {
+    p = p * (c[i] ? settings[i].p : 1 - settings[i].p);
+  }
+
+  return p;
+}
+
+// Compute the number of seats that each party will get for this outcome
+function computeSeats(c) {
+  var seats = _.extend({}, baseSeats);
+
+  for (var i = 0; i < c.length; i++) {
+    var winner = c[i] ? settings[i].p1 : settings[i].p2;
+    seats[winner] += 1;
+  }
+
+  return seats;
+}
+
+// Classify this outcome 
+function classifyOutcome(seats) {
+  if (seats.lab > 21) {
+    return outcomes.LabourMajority;
+  } else if (seats.lab === 21) {
+    return outcomes.Labour21;
+  } else if (seats.lab > seats.ld) {
+    return outcomes.NOCLabLargest;
+  } else if (seats.ld === 21) {
+    return outcomes.LDMayorsCastingVote;
+  } else if (seats.ld > 21) {
+    return outcomes.LDOutrightMajority;
+  } else if (seats.ld > seats.lab) {
+    return outcomes.NOCLDLargest;
+  } else {
+    return outcomes.NOCLabLDEqual;
+  }
+}
+
+// Return an array of n identical values
+function arrayOfN(n, v) {
+  return _.times(n, function() { return v; });
+}
+
+// Go through all the possible combinations and
+// compute the probability of each outcome.
+function computeProbs() {
+  var c = arrayOfN(wardCount, false);
+  var probs = arrayOfN(outcomeCount, 0);
+  var done = false;
+
+  // seatProbs holds an array for each party of giving the probability
+  // that it will end up with n seats.
+  var seatProbs = {};
+  _.each(parties, function(party) { seatProbs[party] = arrayOfN(totalSeats, 0); });
+
+  do {
+    var p = combinationProbability(c);
+    var seats = computeSeats(c);
+
+    // Add the probability of this outcome for the number of seats for each party
+    _.each(parties, function(party) {
+      seatProbs[party][seats[party]] += p;
+    });
+
+    // Also calculate the probability of each kind of overall outcome
+    var outcomeIndex = classifyOutcome(seats);
+    probs[outcomeIndex] += p;
+
+    done = nextCombination(c);
+  } while (!done);
+  return { probs: probs, seatProbs seatProbs };
+}
+
+// Output the assumed probabilities in a format that's easy to make
+// a bar chart from
+function outputColourTable() {
+  console.log('Ward,' + _.map(parties, function(p) { return partyNames[p]; }).join(','));
+  for (var i = 0; i < wardCount; i++) {
+    var row = arrayOfN(parties.length, 0);
+    var s = settings[i];
+    row[partyIndex[s.p1]] = s.p;
+    row[partyIndex[s.p2]] = 1 - s.p;
+    console.log(wardNames[i] + ',' + row.join(','));
+  }
+}
+
+function outputSeatProbs() {
+  
+}
+
+var result = computeProbs();
+var probs = result.probs;
+var total = 0;
+
+outputColourTable();
+
+console.log();
+outputSeatProbs(result.seatProbs);
+
+console.log();
+console.log('Outcome,Probability');
+
+for (var i = 0; i < outcomeCount; i++) {
+  total += probs[i];
+  console.log(outcomeText[i] + ',' + probs[i]);
+}
+
+console.log('Total,' + total);

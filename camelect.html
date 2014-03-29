@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+
+</head>
+<body>
+<div id="chart">
+<script>
+	var width = 800,
+		height = 800;
+
+	var svg = d3.select("#chart").append("svg:svg")
+		.attr('width',width)
+		.attr('height',height)
+
+	var p=d3.scale.category10();
+
+	function blip(){
+		svg.append("svg:circle")
+              .attr("cx", Math.random() * width)
+                .attr("cy", Math.random() * height)
+                .attr("r", 0)
+                .attr("class",'')
+                .style("fill", "none")
+                .style("stroke", p(Math.random() * 100))
+                .style("stroke-opacity", 1)
+                .style("stroke-width", Math.random() * 50)
+            .transition()
+                .duration(Math.random() * 5000)
+                .ease(Math.sqrt)
+                .attr("r", Math.random() * 100)
+                .style("stroke-opacity", 0)
+                .style("stroke-width", 1)
+                .remove()
+	}
+
+    blip();
+	//setInterval(blip,10//);
+
+</script>
+</body>
+</html>
