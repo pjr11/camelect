@@ -1,3 +1,6 @@
+// I may put a web front end on this at some point, but for now you'll need to run it
+// with node.js
+
 var _ = require('underscore');
 
 // The number of seats not up for election this time
