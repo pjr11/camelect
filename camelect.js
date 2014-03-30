@@ -1,5 +1,8 @@
 var _ = require('underscore');
+
+// The number of seats not up for election this time
 var baseSeats = { ld: 10, lab: 16, con: 1, grn: 0, ind: 1 };
+
 var totalSeats = 42;
 var partyNames = {
   ld: "Lib Dem",
@@ -82,23 +85,59 @@ var baseSettings = [
 // Settings for an optimistic Liberal Democrat
 var libDemHopingAgainstHopeSettings = [
   { p1: 'lab', p2: 'grn', p: 0.6 },  // Abbey
-  { p1: 'lab', p2: 'ld', p: 0.60 },   // Arbury
+  { p1: 'ld', p2: 'lab', p: 0.6 },   // Arbury
   { p1: 'ld', p2: 'ind', p: 0.9 },   // Castle
   { p1: 'lab', p2: 'con', p: 0.7 },  // Cherry Hinton
   { p1: 'lab', p2: 'con', p: 0.7 },  // Coleridge
-  { p1: 'ld', p2: 'lab', p: 0.75 },    // East Chesterton
+  { p1: 'ld', p2: 'lab', p: 0.75 },  // East Chesterton
   { p1: 'lab', p2: 'ld', p: 0.5 },   // King's Hedges
-  { p1: 'ld', p2: 'lab', p: 0.8 },    // Market
-  { p1: 'ld', p2: 'lab', p: 0.9 },    // Newnham
+  { p1: 'ld', p2: 'lab', p: 0.8 },   // Market
+  { p1: 'ld', p2: 'lab', p: 0.9 },   // Newnham
   { p1: 'lab', p2: 'ld', p: 0.5 },   // Petersfield
   { p1: 'ld', p2: 'lab', p: 0.8 },   // Romsey
-  { p1: 'ld', p2: 'lab', p: 0.9 },    // Queen Edith's
-  { p1: 'ld', p2: 'con', p: 0.8 },    // Trumpington
+  { p1: 'ld', p2: 'lab', p: 0.9 },   // Queen Edith's
+  { p1: 'ld', p2: 'con', p: 0.8 },   // Trumpington
+  { p1: 'ld', p2: 'lab', p: 0.7 }    // West Chesterton
+];
+
+// Settings for a Labour optimist
+var labourOptimistSettings = [
+  { p1: 'lab', p2: 'grn', p: 1 },    // Abbey
+  { p1: 'lab', p2: 'ld', p: 0.9 },   // Arbury
+  { p1: 'ld', p2: 'ind', p: 0.5 },   // Castle
+  { p1: 'lab', p2: 'con', p: 1 },    // Cherry Hinton
+  { p1: 'lab', p2: 'con', p: 1 },    // Coleridge
+  { p1: 'lab', p2: 'ld', p: 0.75 },  // East Chesterton
+  { p1: 'lab', p2: 'ld', p: 0.95 },  // King's Hedges
+  { p1: 'lab', p2: 'ld', p: 0.6 },   // Market
+  { p1: 'lab', p2: 'ld', p: 0.5 },   // Newnham
+  { p1: 'lab', p2: 'ld', p: 0.95 },  // Petersfield
+  { p1: 'lab', p2: 'ld', p: 0.6 },   // Romsey
+  { p1: 'lab', p2: 'ld', p: 0.6 },   // Queen Edith's
+  { p1: 'con', p2: 'ld', p: 0.6 },   // Trumpington
   { p1: 'lab', p2: 'ld', p: 0.7 }    // West Chesterton
 ];
 
+// Nick Clarke settings
+var nickClarkeFantasySettings = [
+  { p1: 'lab', p2: 'con', p: 0.6 },  // Abbey
+  { p1: 'lab', p2: 'con', p: 0.7 },  // Arbury
+  { p1: 'con', p2: 'ld', p: 0.6 },   // Castle
+  { p1: 'lab', p2: 'con', p: 0.6 },  // Cherry Hinton
+  { p1: 'lab', p2: 'con', p: 0.6 },  // Coleridge
+  { p1: 'lab', p2: 'con', p: 0.6 },  // East Chesterton
+  { p1: 'lab', p2: 'con', p: 0.7 },  // King's Hedges
+  { p1: 'con', p2: 'ld', p: 0.6 },   // Market
+  { p1: 'ld', p2: 'con', p: 0.5 },   // Newnham
+  { p1: 'lab', p2: 'con', p: 0.7 },  // Petersfield
+  { p1: 'lab', p2: 'ld', p: 0.6 },   // Romsey
+  { p1: 'con', p2: 'ld', p: 0.7 },   // Queen Edith's
+  { p1: 'con', p2: 'ld', p: 0.9 },   // Trumpington
+  { p1: 'lab', p2: 'con', p: 0.6 }   // West Chesterton
+];
+
 // Which set shall we use?
-var settings = libDemHopingAgainstHopeSettings;
+var settings = baseSettings;
 
 // Think of c as being a binary number that we're incrementing; each array entry is one digit,
 // false as zero, true as one. Returns a boolean saying whether we've finished.
